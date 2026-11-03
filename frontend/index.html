@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wayfinder: AI Virtual Tourist Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#EEF3F1;--card:#fff;--ink:#12262B;--mut:#52666B;--line:#CFDCDA;--brand:#0F4C5C;--on:#fff;--acc:#E9A23B;--accbg:#FBEBD0}
+@media (prefers-color-scheme:dark){:root{--bg:#0C1A1E;--card:#13262B;--ink:#E6F0EE;--mut:#9BB1B4;--line:#26414A;--brand:#5FB3C4;--on:#06191E;--acc:#F0B454;--accbg:#3a2d12;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.55 Figtree,system-ui,sans-serif;padding-top:env(safe-area-inset-top,0)}
+h1,h2,h3{font-family:"Bricolage Grotesque",Figtree,sans-serif;line-height:1.15;margin:0}
+header{padding:26px 20px 6px;max-width:860px;margin:0 auto}
+header h1{font-size:clamp(28px,6vw,42px);letter-spacing:-.02em}
+header p{color:var(--mut);margin:8px 0 0;max-width:56ch}
+nav{position:sticky;top:env(safe-area-inset-top,0);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);margin-top:14px}
+nav div{max-width:860px;margin:0 auto;display:flex;gap:4px;overflow-x:auto;padding:0 12px}
+nav button{flex:none;background:none;border:0;border-bottom:3px solid transparent;padding:12px;font:600 15px Figtree,sans-serif;color:var(--mut);cursor:pointer}
+nav button[aria-selected=true]{color:var(--brand);border-color:var(--acc)}
+main{max-width:860px;margin:0 auto;padding:18px 16px calc(60px + env(safe-area-inset-bottom,0))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
+label,.lab{display:block;font-weight:600;font-size:14px;margin:14px 0 6px}
+select,input{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:0 14px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:99px;padding:7px 14px;font:500 14px Figtree,sans-serif;cursor:pointer}
+.chip[aria-pressed=true]{background:var(--brand);color:var(--on);border-color:var(--brand)}
+.btn{background:var(--brand);color:var(--on);border:0;border-radius:10px;padding:12px 20px;font:600 16px Figtree,sans-serif;cursor:pointer;margin-top:16px}
+.btn.alt{background:var(--bg);color:var(--brand);border:1px solid var(--brand);margin-top:0;padding:8px 14px;font-size:14px}
+.btn:disabled{opacity:.6;cursor:wait}
+:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.sum{display:flex;flex-wrap:wrap;gap:6px 22px;color:var(--mut);font-size:14px;margin:6px 0 12px}
+.sum b{color:var(--ink);font:700 20px "Bricolage Grotesque",sans-serif}
+.note{background:var(--accbg);border-radius:10px;padding:10px 14px;font-size:14px;margin:10px 0}
+.err{background:#fde2e0;color:#7a1410;border-radius:10px;padding:10px 14px;margin:10px 0}
+.route{margin:14px 0 0 12px;padding-left:26px;border-left:2px dashed var(--brand)}
+.stop{position:relative;padding:0 0 18px}
+.stop::before{content:"";position:absolute;left:-36px;top:4px;width:18px;height:18px;border-radius:50%;background:var(--card);border:4px solid var(--brand)}
+.stop.meal::before{border-color:var(--acc)}
+.t{font-size:13px;color:var(--mut);font-weight:600}
+.stop h3{font-size:18px}.stop p{margin:2px 0 0;color:var(--mut);font-size:15px}
+.leg{font-size:13px;color:var(--mut);margin:-6px 0 12px;font-style:italic}
+.tag{display:inline-block;font-size:12px;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:1px 8px;margin-right:6px}
+.item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.item:first-of-type{border-top:0}.item small{color:var(--mut);display:block}
+.score{font:700 18px "Bricolage Grotesque",sans-serif;color:var(--brand);white-space:nowrap}
+.sos{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.sos a{display:block;text-decoration:none;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px}
+.sos b{display:block;font:700 26px "Bricolage Grotesque",sans-serif;color:var(--brand)}
+.msg{padding:10px 14px;border-radius:12px;margin:8px 0;max-width:90%;white-space:pre-wrap}
+.msg.u{background:var(--brand);color:var(--on);margin-left:auto}.msg.a{background:var(--bg);border:1px solid var(--line)}
+details{margin-top:10px;font-size:14px;color:var(--mut)}summary{cursor:pointer;font-weight:600;color:var(--brand)}
+.empty{color:var(--mut);text-align:center;padding:28px 10px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header><h1>Wayfinder</h1><p>Tell it where you are going and what you enjoy. It builds a day-wise plan from live places and weather data.</p></header>
+<nav><div role="tablist" id="tabs"></div></nav>
+<main><section id="t-plan"></section><section id="t-trip" hidden></section><section id="t-stay" hidden></section>
+<section id="t-safe" hidden></section><section id="t-chat" hidden></section><section id="t-trips" hidden></section></main>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const CATS={culture:"Culture and history",nature:"Nature",adventure:"Adventure",relax:"Relaxation",shopping:"Shopping",nightlife:"Nightlife"};
+const THEMES=["Relaxed","Adventure","Cultural","Family","Romantic"];
+let token=localStorage.getItem("wf_token")||"",user=null,plan=null,chat=[];
+let form={destination:"",start_date:"",days:3,theme:"Relaxed",budget:"Mid",diet:"Any",interests:["culture","nature"]};
+
+async function api(path,opt={}){
+  const h={"Content-Type":"application/json"};if(token)h.Authorization="Bearer "+token;
+  const r=await fetch(path,{...opt,headers:h,body:opt.body?JSON.stringify(opt.body):undefined});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(typeof d.detail==="string"?d.detail:"Request failed ("+r.status+")");
+  return d;
+}
+const TABS=[["plan","Plan"],["trip","Itinerary"],["stay","Stay and food"],["safe","Safety"],["chat","Ask the guide"],["trips","My trips"]];
+function show(k){TABS.forEach(([t])=>$("#t-"+t).hidden=t!==k);document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.t===k));window.scrollTo(0,0);
+  if(k==="safe")viewSafe();if(k==="trips")viewTrips();}
+$("#tabs").innerHTML=TABS.map(([k,l])=>`<button role="tab" data-t="${k}" aria-selected="false">${l}</button>`).join("");
+$("#tabs").onclick=e=>{const b=e.target.closest("button");if(b)show(b.dataset.t)};
+
+function viewPlan(err=""){
+  const sel=(id,arr,v)=>`<select id="${id}">${arr.map(([a,b])=>`<option value="${a}"${a==v?" selected":""}>${b}</option>`).join("")}</select>`;
+  $("#t-plan").innerHTML=`<div class="card"><h2>Plan a trip</h2>${err?`<div class="err">${esc(err)}</div>`:""}
+  <div class="row"><div><label for="dest">Destination</label><input id="dest" value="${esc(form.destination)}" placeholder="City or region, e.g. Jaipur" autocomplete="off"></div>
+  <div><label for="start">Start date</label><input id="start" type="date" value="${form.start_date}"></div>
+  <div><label for="days">Days</label>${sel("days",[1,2,3,4,5,6,7].map(n=>[n,n+(n>1?" days":" day")]),form.days)}</div>
+  <div><label for="theme">Travel theme</label>${sel("theme",THEMES.map(t=>[t,t]),form.theme)}</div>
+  <div><label for="budget">Stay budget</label>${sel("budget",[["Budget","Budget"],["Mid","Mid-range"],["Luxury","Luxury"]],form.budget)}</div>
+  <div><label for="diet">Food preference</label>${sel("diet",[["Any","Any"],["Veg","Vegetarian-friendly"]],form.diet)}</div></div>
+  <span class="lab">Interests</span><div class="chips" id="chips">${Object.entries(CATS).map(([k,l])=>`<button type="button" class="chip" data-i="${k}" aria-pressed="${form.interests.includes(k)}">${l}</button>`).join("")}</div>
+  <button class="btn" id="go">Build itinerary</button></div>`;
+  $("#chips").onclick=e=>{const b=e.target.closest("button");if(!b)return;const i=b.dataset.i;form.interests=form.interests.includes(i)?form.interests.filter(x=>x!==i):[...form.interests,i];b.setAttribute("aria-pressed",form.interests.includes(i))};
+  $("#go").onclick=async()=>{
+    form.destination=$("#dest").value.trim();form.start_date=$("#start").value;
+    ["days","theme","budget","diet"].forEach(k=>form[k]=k==="days"?+$("#"+k).value:$("#"+k).value);
+    if(form.destination.length<2)return viewPlan("Enter a destination.");
+    if(!form.interests.length)form.interests=["culture"];
+    const b=$("#go");b.disabled=true;b.textContent="Fetching live data and planning…";
+    try{plan=await api("/api/plan",{method:"POST",body:{...form,start_date:form.start_date||null}});renderAll();show("trip")}
+    catch(e){viewPlan(e.message)}};
+}
+const money=n=>n==null?"":Number(n).toLocaleString("en-IN");
+function ratingLine(p){return p.rating&&p.reviews?`Rated ${p.rating} from ${money(p.reviews)} reviews`:p.source==="osm"?"Popularity estimated from OpenStreetMap tags":""}
+function viewTrip(){
+  if(!plan){$("#t-trip").innerHTML=`<div class="empty">No itinerary yet. Fill in Plan and select Build itinerary.</div>`;return}
+  const p=plan,it=p.itinerary,r=p.request,s=p.sources;
+  const days=it.days.map((d,i)=>{const w=d.weather;return `<div class="card"><h2>Day ${d.day}</h2>
+  <div class="sum"><span><b>${d.items.filter(x=>x.type==="stop").length}</b> stops</span><span><b>${d.hours}</b> hrs sightseeing</span><span><b>${d.km}</b> km travel</span></div>
+  ${w&&w.summary!=="No weather data"?`<div class="note">${esc(w.summary)}, ${w.tmin??"?"} to ${w.tmax??"?"} °C, ${w.rain_prob}% chance of rain <small>(${esc(w.source)})</small></div>`:""}
+  ${p.day_tips[i]?`<p>${esc(p.day_tips[i])}</p>`:""}
+  <div class="route">${d.items.map(x=>x.type==="meal"
+   ?`<div class="stop meal"><div class="t">${x.start}</div><h3>${x.label}: ${esc(x.place.name)}</h3><p>${esc(x.place.cuisine)}${x.place.address?" · "+esc(x.place.address):""}</p></div>`
+   :`${x.leg?`<div class="leg">${x.leg.km} km, about ${x.leg.min} min by car</div>`:""}<div class="stop"><div class="t">${x.start} to ${x.end}</div><h3>${esc(x.place.name)}</h3>
+   <p><span class="tag">${CATS[x.place.category]||x.place.category}</span>${esc(ratingLine(x.place))}</p>${x.why.length?`<p>Why: ${esc(x.why.join(", "))}.</p>`:""}</div>`).join("")}</div></div>`}).join("");
+  $("#t-trip").innerHTML=`<div class="card"><h2>${r.days}-day ${r.theme.toLowerCase()} trip to ${esc(p.destination.name)}</h2>
+  <p>${esc(p.summary)}</p><div class="sum"><span><b>${it.total_km}</b> km total</span><span>Places: ${s.places==="google"?"Google Places":"OpenStreetMap"}</span><span>Weather: ${esc(s.weather)}</span><span>${s.llm?"Written by the LLM":"LLM off"}</span></div>
+  ${it.days.length<it.requested_days?`<div class="note">Only enough places were found for ${it.days.length} of ${it.requested_days} days.</div>`:""}
+  <button class="btn alt" id="save">Save this trip</button> <span id="savemsg"></span>
+  ${s.guide_passages.length?`<details><summary>Guide passages retrieved (RAG)</summary><ul>${s.guide_passages.map(g=>`<li>${esc(g.title)} (similarity ${g.similarity}) <a href="${esc(g.source)}" target="_blank" rel="noopener">source</a></li>`).join("")}</ul></details>`:""}</div>${days}`;
+  $("#save").onclick=async()=>{ if(!token){$("#savemsg").textContent="Sign in under My trips to save.";return}
+    try{await api("/api/trips",{method:"POST",body:{title:`${p.destination.name} (${r.days}d)`,plan}});$("#save").disabled=true;$("#savemsg").textContent="Saved to My trips."}
+    catch(e){$("#savemsg").textContent=e.message}};
+}
+function viewStay(){
+  if(!plan){$("#t-stay").innerHTML=`<div class="empty">Build an itinerary first.</div>`;return}
+  const it=plan.itinerary,row=(x,sub)=>`<div class="item"><div><b>${esc(x.name)}</b><small>${esc(sub)}</small></div><div class="score">${x.rating||x.score}</div></div>`;
+  $("#t-stay").innerHTML=`<div class="card"><h2>Where to stay</h2><div class="note">Ranked by rating, review count and your budget. Without a Google key, scores are estimates.</div>
+  ${it.stays.map(x=>row(x,`${x.type}, ${x.tier} tier${x.reviews?" · "+money(x.reviews)+" reviews":""}${x.address?" · "+x.address:""}`)).join("")||"<div class='empty'>No stays found.</div>"}</div>
+  <div class="card"><h2>Where to eat</h2>${it.foods.map(x=>row(x,`${x.cuisine}${x.reviews?" · "+money(x.reviews)+" reviews":""}${x.address?" · "+x.address:""}`)).join("")||"<div class='empty'>No restaurants found.</div>"}</div>`;
+}
+async function viewSafe(){
+  const dest=plan?plan.destination.name:form.destination;const el=$("#t-safe");
+  if(!dest){el.innerHTML=`<div class="empty">Enter a destination in Plan to see local emergency numbers and safety notes.</div>`;return}
+  el.innerHTML=`<div class="empty">Loading safety information…</div>`;
+  try{const d=await api("/api/safety?destination="+encodeURIComponent(dest));
+    el.innerHTML=`<div class="card"><h2>Emergency numbers: ${esc(d.destination)}</h2><p class="t">Tap a number to call.</p><div class="sos">${d.numbers.map(([n,l])=>`<a href="tel:${n}"><b>${n}</b>${esc(l)}</a>`).join("")}</div></div>
+    <div class="card"><h2>Safety notes from travel guides</h2>${d.guide_passages.map(p=>`<p><b>${esc(p.title)}</b><br>${esc(p.text)}<br><a href="${esc(p.source)}" target="_blank" rel="noopener">Source</a></p>`).join("")||"<div class='empty'>No guide passages available.</div>"}</div>`;
+  }catch(e){el.innerHTML=`<div class="err">${esc(e.message)}</div>`}
+}
+function viewChat(){
+  $("#t-chat").innerHTML=`<div class="card"><h2>Ask the guide</h2><p class="t">The assistant calls live weather, places and guide search before answering.</p><div id="log">${chat.map(m=>`<div class="msg ${m.role==="user"?"u":"a"}">${esc(m.content)}</div>`).join("")}</div>
+  <label for="q">Your question</label><input id="q" placeholder="Will it rain in Goa next weekend?"><button class="btn" id="ask">Ask</button></div>`;
+  const send=async()=>{const q=$("#q").value.trim();if(!q)return;const hist=chat.slice();chat.push({role:"user",content:q});viewChat();$("#ask").disabled=true;
+    try{const d=await api("/api/chat",{method:"POST",body:{message:q,history:hist}});chat.push({role:"assistant",content:d.reply})}
+    catch(e){chat.push({role:"assistant",content:"Error: "+e.message})}viewChat()};
+  $("#ask").onclick=send;$("#q").onkeydown=e=>{if(e.key==="Enter")send()};
+}
+async function viewTrips(err=""){
+  const el=$("#t-trips");
+  if(!token){el.innerHTML=`<div class="card"><h2>Sign in to save trips</h2>${err?`<div class="err">${esc(err)}</div>`:""}
+   <label for="nm">Name (new accounts)</label><input id="nm"><label for="em">Email</label><input id="em" type="email" autocomplete="email"><label for="pw">Password (8+ characters)</label><input id="pw" type="password" autocomplete="current-password">
+   <button class="btn" id="in">Sign in</button> <button class="btn alt" id="up">Create account</button></div>`;
+   const go=async(path,body)=>{try{const d=await api(path,{method:"POST",body});token=d.token;user=d.user;localStorage.setItem("wf_token",token);viewTrips()}catch(e){viewTrips(e.message)}};
+   $("#in").onclick=()=>go("/api/auth/login",{email:$("#em").value,password:$("#pw").value});
+   $("#up").onclick=()=>go("/api/auth/register",{email:$("#em").value,password:$("#pw").value,name:$("#nm").value||"Traveller"});return}
+  try{if(!user)user=await api("/api/me");const t=await api("/api/trips");
+    const grp=(s,l)=>{const x=t.filter(r=>r.status===s);return `<h3>${l}</h3>${x.map(r=>`<div class="item"><div><b>${esc(r.title)}</b><small>${esc(r.theme)}, ${r.days} days${r.start_date?" from "+r.start_date:""}</small></div><div><button class="btn alt" data-open="${r.id}">Open</button> <button class="btn alt" data-del="${r.id}">Delete</button></div></div>`).join("")||"<div class='empty'>None yet.</div>"}`};
+    el.innerHTML=`<div class="card"><h2>${esc(user.name)}’s trips</h2>${plan?`<div class="item"><div><b>Current plan</b><small>${esc(plan.destination.name)}, ${plan.request.days} days</small></div><button class="btn alt" data-cur>View</button></div>`:""}${grp("upcoming","Saved and upcoming")}${grp("past","Previous trips")}
+    <button class="btn alt" id="out" style="margin-top:16px">Sign out</button></div>`;
+    el.onclick=async e=>{const b=e.target.closest("button");if(!b)return;
+      if("cur" in b.dataset)show("trip");
+      if(b.dataset.open){plan=await api("/api/trips/"+b.dataset.open);renderAll();show("trip")}
+      if(b.dataset.del){await api("/api/trips/"+b.dataset.del,{method:"DELETE"});viewTrips()}
+      if(b.id==="out"){token="";user=null;localStorage.removeItem("wf_token");viewTrips()}};
+  }catch(e){token="";localStorage.removeItem("wf_token");viewTrips("Session expired. Sign in again.")}
+}
+function renderAll(){viewTrip();viewStay();viewSafe()}
+viewPlan();viewTrip();viewStay();viewChat();show("plan");
+</script>
+</body>
+</html>
